@@ -23,10 +23,13 @@ function addlinha(dadosAPI) {
         //Adicionando HTML
         linha.innerHTML = `
           <tr>
-            <td class="px-4 py-2 id-col">${element.id}</td>
-            <td class="px-4 py-2">${element.name}</td>
-            <td class="px-4 py-2">${element.email}</td>
-            <td class="px-4 py-2"><button  class="bg-red-500 text-white px-2 py-1 rounded" onclick="remover(this)">remover</button></td>
+            <td class="px-4 py-2 id-col max-w-[10px]">${element.id}</td>
+            <td class="px-4 py-2 name-col">${element.name}</td>
+            <td class="px-4 py-2 email-col">${element.email}</td>
+            <td class="px-4 py-2">
+                <button class="bg-red-500 text-white px-2 py-1 rounded" onclick="remover(this)">remover</button>
+                <button class="bg-blue-500 text-white px-2 py-1 ml-10 rounded" onclick="Editar(this)">Editar</button>
+            </td>
           </tr>
         `;
 
@@ -48,7 +51,7 @@ function cadastrar() {
 
         //API POST  
         fetch('http://localhost:8080/api/aluno', {
-            method: 'POST', 
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -110,5 +113,51 @@ function remover(dadosbotao) {
             Swal.fire('Cancelado', '', 'info');
         }
     });
+}
 
+async function Editar(dadosbotao) {
+    const linhaEditar = dadosbotao.closest('tr');
+    const id = linhaEditar.querySelector('.id-col').textContent.trim();
+    const nome = linhaEditar.querySelector('.name-col').textContent.trim();
+    const email = linhaEditar.querySelector('.email-col').textContent.trim();
+
+
+    const { value } = await Swal.fire({
+        title: "Editar",
+        html: `
+            <p>Nome</p>
+            <input value=${nome} id="swal-input1" class="swal2-input">
+            <p>Email</p>
+            <input value=${email} id="swal-input2" class="swal2-input">
+        `,
+        focusConfirm: false,
+        preConfirm: () => {
+            return [
+                document.getElementById("swal-input1").value,
+                document.getElementById("swal-input2").value
+            ];
+        }
+    });
+
+    console.log(value);
+    //name = value[0]; email = value[1];
+
+    fetch(`http://localhost:8080/api/aluno/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ "name": value[0], "email": value[1] }),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then((res) => {
+        if (res.ok) {
+            Swal.fire('Confirmado!', '', 'success');
+            linhaEditar.querySelector('.name-col').textContent = value[0];
+            linhaEditar.querySelector('.email-col').textContent = value[1];
+            return;
+        }
+
+        throw new Error('Erro ao editar o item');
+    }).catch((err) => {
+        Swal.fire('Erro ao editar!', '', 'error');
+    });
 }
